@@ -1,8 +1,16 @@
 import openpyxl as xl
 
-
 def load_data(xl_file):
-    wb = xl.load_workbook(xl_file, data_only = True)
+
+    try:
+        wb = xl.load_workbook(xl_file, data_only = True)
+    except FileNotFoundError:
+        print(f"[Error] File {xl_file} not found")
+        return None
+    except Exception as e:
+        print(f"[Error] An error occurred while loading the file: {e}")
+        return None
+    
     ws = wb['Daily Log']
 
     expectDays = 36
@@ -50,13 +58,11 @@ def load_data(xl_file):
                      },
                  
                     "Energy" : {'High' : 3, 'Medium' : 2, 'Low' : 1}
-                 } 
+                 }
     
     valid_day = len(MyData)
 
-    # displayActivityDataSummary()
-    calc_avgActivity(MyData, valid_day)
-
+    calc_avgActivity(MyData, valid_day, expectDays)
 
     TPI = TechProductivityIndex(MyData, valid_day)
     AAI = AcademicActivityIndex(MyData, valid_day)
@@ -71,14 +77,11 @@ def load_data(xl_file):
 
     display(TPI, AAI, PHAI, SRI, ABI, TUI, EI, DCI, PAI)
 
-
 # -------------------------Activity Data Summary--------------------------
 
 # ========================================================================
 #                             Average per Day
 # ========================================================================
-
-
 
 def getValue(value, activity):
     log = []
@@ -87,22 +90,29 @@ def getValue(value, activity):
         log.append(i[activity])
     return log
 
-def calc_avgActivity(MyData, ValidDays):
-
-    averageActivity = []
+def calc_avgActivity(MyData, ValidDays, ExpectedDays):
 
     avgSleep = sum(getValue(MyData, "sleep")) / ValidDays
     avgFitness = sum(getValue(MyData, "fitness")) / ValidDays
     avgStudy = sum(getValue(MyData, "study")) / ValidDays
-    avgCoding = sum(getValue(MyData, "coding"))
-    avgClass = sum(getValue(MyData, "class"))
-    avgOtherActivity = sum(getValue(MyData, "otherActivity"))
-    avgFreeTime = sum(getValue(MyData, "unaccounted"))
+    avgCoding = sum(getValue(MyData, "coding")) / ValidDays
+    avgClass = sum(getValue(MyData, "class")) / ValidDays
+    avgOtherActivity = sum(getValue(MyData, "otherActivity")) / ValidDays
+    avgFreeTime = sum(getValue(MyData, "unaccounted")) / ValidDays
 
-    # averageActivity.extend([
-    #     ()avgSleep, avgFitness, avgStudy, avgCoding, avgClass, avgOtherActivity, avgFreeTime])
+    print(f"\n{'='*50}\n{' ' * 12}Average Activity Per Day\n{'='*50}")
 
-    # return averageActivity
+    print(f"Expected Number of Days: {ExpectedDays} days")
+    print(f"Valid day Recorded: {ValidDays} days")
+    print(f"missing days: {ExpectedDays - ValidDays} days")
+    print(f"Invalid / Excluded Records: {ExpectedDays - ValidDays}")
+    print(f"Average Sleep : {avgSleep:.2f} min / day")
+    print(f"Average Fitness : {avgFitness:.2f} min / day")
+    print(f"Average Study : {avgStudy:.2f} min / day")
+    print(f"Average Coding : {avgCoding:.2f} min / day")
+    print(f"Average Class : {avgClass:.2f} min / day")
+    print(f"Average Other Activity : {avgOtherActivity:.2f} min / day")
+    print(f"Average Free Time : {avgFreeTime:.2f} min / day")
 
 # ------------------------------Index Value-------------------------------
 
@@ -131,7 +141,6 @@ def AcademicActivityIndex(data, validDays):
 
     for acc in data:
         academic.append(acc['study'] + acc['class'])
-
     
     aai = sum(academic) / validDays
 
@@ -171,7 +180,7 @@ def SleepRecoveryIndex(data, validDays):
 #                       Activity Balance index (ABI)
 # =========================================================================
 
-def ActivityBalanceIndex(data, validDays):
+def ActivityBalanceIndex(data, validDays):  
     unaccountedTime = []
 
     for ut in data:
@@ -246,21 +255,16 @@ def PersonalActivityIndex(tpi, aai, phai, sri, tui, ei, dci):
 #                               Display DATA
 # =========================================================================
 
-# def displayActivityDataSummary():
-#     for activity in calc_avgActivity():
-
-
-
 def display(TPI, AAI, PHAI, SRI, ABI, TUI, EI, DCI, PAI):
+    print(f"\n{'='*50}\n{' ' * 18}Index Values\n{'='*50}")
     print(f"Tech Productivity: {TPI:.2f} min / day")
     print(f"Academic Activity Index: {AAI:.2f} min / day")
     print(f"Physical Activity Index: {PHAI:.2f} min / day")
     print(f"Sleep Recovery Index : {SRI:.2f} min / day")
     print(f"Activity Balance index: : {ABI:.2f} min / day")
     print(f"Time Utilization index: : {TUI:.2f} min / day")
-    print(f"Expering Index : {EI:.2f}")
+    print(f"Experience Index : {EI:.2f}")
     print(f"Data Continuity: {DCI:.2f} %")
     print(f"Personal Activity Index: {PAI:.2f}")
-
 
 load_data("12607191.xlsx")
